@@ -25,7 +25,7 @@ end
 ---@param lang string
 ---@return boolean
 local function is_stylesheet(lang)
-  return lang == "css" or lang == "scss"
+  return lang == "css" or lang == "scss" or lang == "styled"
 end
 
 --- Get the language set to the buffer
@@ -60,8 +60,7 @@ end
 ---@return boolean
 function source:is_available()
   local bufnr = vim.api.nvim_get_current_buf() or 0
-  local buf_lang = get_buf_lang(bufnr)
-  local ok, tree = pcall(vim.treesitter.get_parser, bufnr, buf_lang)
+  local ok, tree = pcall(vim.treesitter.get_parser, bufnr)
 
   -- if there is no treesitter parser then look at the file extension
   if not ok then
@@ -72,7 +71,37 @@ function source:is_available()
     return is_stylesheet(filename)
   end
 
-  return iter_tree(tree)
+  local treesitter_contains_stylesheet = iter_tree(tree)
+  if treesitter_contains_stylesheet then
+    return true
+  end
+
+  local otter_extension = require("otter.keeper").extract_code_chunks(bufnr)
+  if otter_extension then
+    local cursor = vim.api.nvim_win_get_cursor(0)
+
+    for ext, occurrences in pairs(otter_extension) do
+      if is_stylesheet(ext) then
+        for _, occurrence in ipairs(occurrences) do
+          local range = occurrence.range
+          if
+            range
+            and (
+              (range.from[1] < cursor[1] - 1 and range.to[1] >= cursor[1] - 1)
+              or (
+                range.from[1] == cursor[1] - 1
+                and range.from[2] <= cursor[2] - 1
+              )
+            )
+          then
+            return true
+          end
+        end
+      end
+    end
+  end
+
+  return false
 end
 
 --- Return the debug name of this source.
