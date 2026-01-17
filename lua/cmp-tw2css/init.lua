@@ -32,7 +32,7 @@ end
 ---@param bufnr number
 local function get_buf_lang(bufnr)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
-  return vim.api.nvim_buf_get_option(bufnr, "ft")
+  return vim.api.nvim_get_option_value("ft", { buf = bufnr })
 end
 
 ---@return boolean
