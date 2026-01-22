@@ -506,7 +506,7 @@
   "flex-wrap": "flex-wrap: wrap;",
   "flex-wrap-reverse": "flex-wrap: wrap-reverse;",
   "flex-nowrap": "flex-wrap: nowrap;",
-  "flex-1": "flex: 1 1 0%;",
+  "flex-1": "flex: 1;",
   "flex-auto": "flex: 1 1 auto;",
   "flex-initial": "flex: 0 1 auto;",
   "flex-none": "flex: none;",
