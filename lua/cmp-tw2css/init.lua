@@ -76,8 +76,8 @@ function source:is_available()
     return true
   end
 
-  local otter_extension = require("otter.keeper").extract_code_chunks(bufnr)
-  if otter_extension then
+  local ok, otter_extension = pcall(require("otter.keeper").extract_code_chunks, bufnr)
+  if ok and otter_extension then
     local cursor = vim.api.nvim_win_get_cursor(0)
 
     for ext, occurrences in pairs(otter_extension) do
