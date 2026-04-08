@@ -37,18 +37,28 @@ end
 
 ---@return boolean
 local function iter_tree(tree)
+  if not tree then
+    return false
+  end
+
+  if type(tree.lang) ~= "function" then
+    return false
+  end
+
   local lang = tree:lang()
 
   if is_stylesheet(lang) then
     return true
   end
 
-  if tree:children() ~= nil then
+  if type(tree.children) == "function" and tree:children() ~= nil then
     for child_lang, child_tree in pairs(tree:children()) do
       if is_stylesheet(child_lang) then
         return true
       else
-        return iter_tree(child_tree)
+        if iter_tree(child_tree) then
+          return true
+        end
       end
     end
   end
@@ -63,7 +73,7 @@ function source:is_available()
   local ok, tree = pcall(vim.treesitter.get_parser, bufnr)
 
   -- if there is no treesitter parser then look at the file extension
-  if not ok then
+  if not ok or tree == nil then
     local filename = vim.fn.expand("%:e")
     if not filename then
       return false
@@ -76,8 +86,13 @@ function source:is_available()
     return true
   end
 
-  local ok, otter_extension = pcall(require("otter.keeper").extract_code_chunks, bufnr)
-  if ok and otter_extension then
+  local otter_ok, otter_keeper = pcall(require, "otter.keeper")
+  if otter_ok and otter_keeper and type(otter_keeper.extract_code_chunks) == "function" then
+    local ok_otter_ext, otter_extension = pcall(otter_keeper.extract_code_chunks, bufnr)
+    if not ok_otter_ext or not otter_extension then
+      return false
+    end
+
     local cursor = vim.api.nvim_win_get_cursor(0)
 
     for ext, occurrences in pairs(otter_extension) do
