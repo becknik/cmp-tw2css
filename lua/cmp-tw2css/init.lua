@@ -135,9 +135,26 @@ end
 --- Copied from nvim-treesitter.ts_utils
 --- Get the root node of the tree
 local function get_root_for_position(line, col, root_lang_tree)
-  local lang_tree = root_lang_tree:language_for_range({ line, col, line, col })
+  if not root_lang_tree then
+    return nil, nil, nil
+  end
 
-  for _, tree in ipairs(lang_tree:trees()) do
+  local ok, lang_tree = pcall(
+    root_lang_tree.language_for_range,
+    root_lang_tree,
+    { line, col, line, col }
+  )
+
+  if not ok or not lang_tree then
+    return nil, nil, nil
+  end
+
+  local ok_trees, trees = pcall(lang_tree.trees, lang_tree)
+  if not ok_trees or not trees then
+    return nil, nil, lang_tree
+  end
+
+  for _, tree in ipairs(trees) do
     local root = tree:root()
 
     if root and is_in_node_range(root, line, col) then
@@ -215,7 +232,7 @@ function source:complete(params, callback)
   local buf_lang = get_buf_lang(bufnr)
   local ok, root_lang_tree = pcall(vim.treesitter.get_parser, bufnr, buf_lang)
 
-  if not ok then
+  if not ok or root_lang_tree == nil then
     if opt.fallback then
       local items = source:get_sorted_items()
       callback(items)
